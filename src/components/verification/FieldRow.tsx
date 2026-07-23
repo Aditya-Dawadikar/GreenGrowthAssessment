@@ -26,13 +26,15 @@ export function FieldRow({ field }: { field: TaxField }) {
   return (
     <div
       data-field-id={field.field_id}
-      onClick={() => selectField(field.field_id)}
       className={cn(
-        "cursor-pointer border-b border-slate-100 px-3 py-2.5 transition-colors",
+        "border-b border-slate-100 px-3 py-2.5 transition-colors",
         isSelected ? "bg-indigo-50/60" : "hover:bg-slate-50",
       )}
     >
-      <div className="mb-1.5 flex items-center gap-1.5">
+      <div
+        onClick={() => selectField(field.field_id)}
+        className="mb-1.5 flex cursor-pointer items-center gap-1.5"
+      >
         <span className="text-[11px] font-medium text-slate-600">{field.label}</span>
         <ReasoningPopover groundTruth={field.ai_ground_truth} />
         <Badge variant="outline" className={cn("ml-auto h-4 px-1.5 text-[9px] font-medium", badge.className)}>
@@ -41,9 +43,15 @@ export function FieldRow({ field }: { field: TaxField }) {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Selection is scoped to these two boxes (not the row as a whole) so it
+            never competes with the mutation pill, which sits between them at
+            the row's geometric center — a row-wide click handler would make
+            clicking near the middle of a row open the ledger drawer instead
+            of just selecting the field. */}
         <div
+          onClick={() => selectField(field.field_id)}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs",
+            "flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs",
             CONFIDENCE_TIER_CLASSES[tier],
           )}
           title={`${Math.round(field.ai_ground_truth.confidence * 100)}% confidence`}
@@ -58,20 +66,20 @@ export function FieldRow({ field }: { field: TaxField }) {
         <MutationPill count={mutationCount(field)} onClick={() => openLedger(field.field_id)} />
 
         <div
+          onClick={() => selectField(field.field_id)}
           className={cn(
             "flex min-w-0 flex-1 items-center gap-1 rounded-md border px-1.5 py-1 text-xs",
             isLocked
               ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-500"
               : status === "user_modified"
                 ? "border-blue-400 bg-blue-50/20 text-blue-950"
-                : "border-slate-300 bg-white focus-within:border-indigo-500",
+                : "cursor-pointer border-slate-300 bg-white focus-within:border-indigo-500",
           )}
         >
           <input
             type="text"
             value={field.current_state.value}
             disabled={isLocked}
-            onClick={(e) => e.stopPropagation()}
             onChange={(e) => updateValue(field.field_id, e.target.value)}
             className={cn(
               "min-w-0 flex-1 bg-transparent font-mono tabular-nums outline-none",
