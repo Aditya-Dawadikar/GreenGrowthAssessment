@@ -134,26 +134,17 @@ function reducer(state: WorkspaceState, action: Action): WorkspaceState {
       };
     }
     case "UNLOCK_FIELD": {
+      // The ledger is append-only (per spec) — every LOCK/UNLOCK is always
+      // recorded here for the audit trail. What counts as a "mutation" for
+      // the pill/header is a separate question, handled in mutationCount()
+      // below: locking and unlocking can never themselves contain a data
+      // change (editing is disabled while locked), so they're never counted
+      // there regardless of how many times a field is locked and unlocked.
       return {
         ...state,
         fields: state.fields.map((field) => {
           if (field.field_id !== action.fieldId) return field;
           if (field.current_state.status !== "locked") return field;
-
-          // Locking always sits at the end of the history (edits are disabled
-          // while locked), so if the value was never actually changed from the
-          // AI extraction, this lock/unlock was a pure approve/un-approve round
-          // trip with no informational content. Drop the LOCKED event instead
-          // of also appending UNLOCKED, rather than leave two no-op events in
-          // the ledger every time someone taps Lock then changes their mind.
-          const wasNeverEdited = field.current_state.value === field.ai_ground_truth.value;
-          if (wasNeverEdited) {
-            return {
-              ...field,
-              current_state: { value: field.current_state.value, status: "ai_extracted" },
-              event_history: field.event_history.slice(0, -1),
-            };
-          }
 
           const parent = latestEvent(field);
           const event: FieldEvent = {
@@ -255,6 +246,12 @@ export function useTaxReturn() {
   return ctx;
 }
 
+/**
+ * A "mutation" is a change to the field's value. AI_EXTRACTED is the
+ * baseline, not a mutation; LOCKED/UNLOCKED change editability, never the
+ * value itself (edits are disabled while locked, so no data change can ever
+ * happen between a LOCK and its UNLOCK). Only UPDATED events count.
+ */
 export function mutationCount(field: TaxField): number {
-  return field.event_history.length - 1;
+  return field.event_history.filter((event) => event.type === "UPDATED").length;
 }
