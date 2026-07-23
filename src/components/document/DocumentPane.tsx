@@ -1,8 +1,15 @@
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PdfDocumentViewer } from "@/components/document/PdfDocumentViewer";
 import { FacsimileDocumentViewer, fieldToFacsimileBox } from "@/components/document/FacsimileDocumentViewer";
 import { documents } from "@/mocks/documents";
 import { useTaxReturn } from "@/state/tax-return-store";
+
+// react-pdf/pdfjs is a large dependency (~1MB worker + core) — only fetch it
+// once a PDF document actually needs rendering, not on initial page load.
+const PdfDocumentViewer = lazy(() =>
+  import("@/components/document/PdfDocumentViewer").then((m) => ({ default: m.PdfDocumentViewer })),
+);
 
 export function DocumentPane() {
   const { fields, selectedFieldId, activeDocId, setActiveDoc } = useTaxReturn();
@@ -33,7 +40,15 @@ export function DocumentPane() {
 
       <div className="min-h-0 flex-1">
         {activeDoc.kind === "pdf" && activeDoc.src ? (
-          <PdfDocumentViewer src={activeDoc.src} pageNumber={selectedPage} bbox={selectedBbox} />
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center bg-slate-100 text-slate-400">
+                <Loader2 className="size-5 animate-spin" />
+              </div>
+            }
+          >
+            <PdfDocumentViewer src={activeDoc.src} pageNumber={selectedPage} bbox={selectedBbox} />
+          </Suspense>
         ) : (
           <FacsimileDocumentViewer
             title="1099-MISC — Miscellaneous Information"

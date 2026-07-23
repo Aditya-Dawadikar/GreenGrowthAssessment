@@ -4,6 +4,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { Loader2 } from "lucide-react";
 import { BoundingBoxOverlay } from "@/components/document/BoundingBoxOverlay";
+import "@/lib/pdf-setup";
 import type { BoundingBox } from "@/types/tax-return";
 
 interface PdfDocumentViewerProps {
