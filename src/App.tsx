@@ -1,9 +1,15 @@
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { TaxReturnProvider } from "@/state/tax-return-store";
+import { Workspace } from "@/components/layout/Workspace";
+
 function App() {
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-slate-50 text-slate-900">
-      <p className="text-sm text-slate-500">AI Tax Platform workspace loading&hellip;</p>
-    </div>
-  )
+    <TooltipProvider delayDuration={150}>
+      <TaxReturnProvider>
+        <Workspace />
+      </TaxReturnProvider>
+    </TooltipProvider>
+  );
 }
 
-export default App
+export default App;
