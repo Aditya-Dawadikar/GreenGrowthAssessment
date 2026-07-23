@@ -25,6 +25,7 @@ export function FieldRow({ field }: { field: TaxField }) {
 
   return (
     <div
+      data-field-id={field.field_id}
       onClick={() => selectField(field.field_id)}
       className={cn(
         "cursor-pointer border-b border-slate-100 px-3 py-2.5 transition-colors",

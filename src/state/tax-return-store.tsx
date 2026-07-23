@@ -71,24 +71,18 @@ function reducer(state: WorkspaceState, action: Action): WorkspaceState {
       };
     }
     case "UPDATE_VALUE": {
+      // Keystrokes only update the live working-state value/badge — they do
+      // NOT write to the event ledger. A mutation is only ever recorded at
+      // commit time (see LOCK_FIELD), so typing a value doesn't spam the
+      // history with one UPDATED event per character.
       return {
         ...state,
         fields: state.fields.map((field) => {
           if (field.field_id !== action.fieldId) return field;
           if (field.current_state.status === "locked") return field;
-          const parent = latestEvent(field);
-          const event: FieldEvent = {
-            event_id: nextEventId(),
-            parent_id: parent.event_id,
-            type: "UPDATED",
-            value: action.value,
-            user_id: CURRENT_USER.id,
-            timestamp: new Date().toISOString(),
-          };
           return {
             ...field,
             current_state: { value: action.value, status: statusForValue(field, action.value) },
-            event_history: [...field.event_history, event],
           };
         }),
       };
@@ -99,8 +93,29 @@ function reducer(state: WorkspaceState, action: Action): WorkspaceState {
         fields: state.fields.map((field) => {
           if (field.field_id !== action.fieldId) return field;
           if (field.current_state.status === "locked") return field;
-          const parent = latestEvent(field);
-          const event: FieldEvent = {
+
+          const events = [...field.event_history];
+          let parent = latestEvent(field);
+
+          // Flush the pending edit (if any) into the ledger now, as a single
+          // UPDATED event, rather than one per keystroke. If the draft value
+          // never actually diverged from the last recorded event (including
+          // the case where someone typed something and typed it back), skip
+          // this — locking shouldn't manufacture a no-op mutation.
+          if (field.current_state.value !== parent.value) {
+            const updateEvent: FieldEvent = {
+              event_id: nextEventId(),
+              parent_id: parent.event_id,
+              type: "UPDATED",
+              value: field.current_state.value,
+              user_id: CURRENT_USER.id,
+              timestamp: new Date().toISOString(),
+            };
+            events.push(updateEvent);
+            parent = updateEvent;
+          }
+
+          const lockEvent: FieldEvent = {
             event_id: nextEventId(),
             parent_id: parent.event_id,
             type: "LOCKED",
@@ -108,10 +123,12 @@ function reducer(state: WorkspaceState, action: Action): WorkspaceState {
             user_id: CURRENT_USER.id,
             timestamp: new Date().toISOString(),
           };
+          events.push(lockEvent);
+
           return {
             ...field,
             current_state: { ...field.current_state, status: "locked" },
-            event_history: [...field.event_history, event],
+            event_history: events,
           };
         }),
       };
