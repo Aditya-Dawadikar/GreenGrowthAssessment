@@ -1,0 +1,298 @@
+{
+  "return_id": "1040_2025_john_doe",
+  "client_name": "John A. Doe",
+  "tax_year": 2025,
+  "form_type": "1040",
+  "fields": [
+    {
+      "field_id": "line_1a_wages",
+      "label": "Line 1a: Wages, tips, other comp.",
+      "ai_ground_truth": {
+        "value": "$125,000.00",
+        "confidence": 0.94,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:42:00Z",
+        "reasoning": "OCR read \"125,000.00\" from Box 1 with high glyph confidence; digits are cleanly printed with no overlapping ink.",
+        "doc_source": {
+          "doc_id": "w2_acme_2025",
+          "doc_name": "2025_W2_AcmeCorp.pdf",
+          "page": 4,
+          "bbox": { "x": 54.3, "y": 7.15, "width": 20.4, "height": 2.95 }
+        }
+      },
+      "current_state": { "value": "$125,000.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_001",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$125,000.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:42:00Z",
+          "metadata": { "confidence": 0.94 }
+        }
+      ]
+    },
+    {
+      "field_id": "line_2_fed_withheld",
+      "label": "Line 2: Federal income tax withheld",
+      "ai_ground_truth": {
+        "value": "$18,750.00",
+        "confidence": 0.91,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:42:01Z",
+        "reasoning": "OCR read \"18,750.00\" from Box 2. Currency symbol and decimal alignment matched the expected template region.",
+        "doc_source": {
+          "doc_id": "w2_acme_2025",
+          "doc_name": "2025_W2_AcmeCorp.pdf",
+          "page": 4,
+          "bbox": { "x": 74.8, "y": 7.15, "width": 21.5, "height": 2.95 }
+        }
+      },
+      "current_state": { "value": "$18,750.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_002",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$18,750.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:42:01Z",
+          "metadata": { "confidence": 0.91 }
+        }
+      ]
+    },
+    {
+      "field_id": "w2_box3_ss_wages",
+      "label": "Box 3: Social security wages",
+      "ai_ground_truth": {
+        "value": "$125,000.00",
+        "confidence": 0.96,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:42:02Z",
+        "reasoning": "Value matches Box 1 wages and falls below the 2025 social security wage base; high confidence cross-field consistency check passed.",
+        "doc_source": {
+          "doc_id": "w2_acme_2025",
+          "doc_name": "2025_W2_AcmeCorp.pdf",
+          "page": 4,
+          "bbox": { "x": 54.3, "y": 10.18, "width": 20.4, "height": 2.95 }
+        }
+      },
+      "current_state": { "value": "$125,000.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_003",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$125,000.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:42:02Z",
+          "metadata": { "confidence": 0.96 }
+        }
+      ]
+    },
+    {
+      "field_id": "line_4_ss_withheld",
+      "label": "Line 4: Social security tax withheld",
+      "ai_ground_truth": {
+        "value": "$7,750.00",
+        "confidence": 0.72,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:42:03Z",
+        "reasoning": "Faint print in Box 4 reduced glyph confidence on the final two digits; value inferred against expected 6.2% withholding rate.",
+        "doc_source": {
+          "doc_id": "w2_acme_2025",
+          "doc_name": "2025_W2_AcmeCorp.pdf",
+          "page": 4,
+          "bbox": { "x": 74.8, "y": 10.18, "width": 21.5, "height": 2.95 }
+        }
+      },
+      "current_state": { "value": "$7,750.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_004",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$7,750.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:42:03Z",
+          "metadata": { "confidence": 0.72 }
+        }
+      ]
+    },
+    {
+      "field_id": "w2_box5_medicare_wages",
+      "label": "Box 5: Medicare wages and tips",
+      "ai_ground_truth": {
+        "value": "$125,000.00",
+        "confidence": 0.95,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:42:04Z",
+        "reasoning": "Value matches Box 1 wages; no Medicare-exempt benefit codes detected in Box 12.",
+        "doc_source": {
+          "doc_id": "w2_acme_2025",
+          "doc_name": "2025_W2_AcmeCorp.pdf",
+          "page": 4,
+          "bbox": { "x": 54.3, "y": 13.21, "width": 20.4, "height": 2.95 }
+        }
+      },
+      "current_state": { "value": "$125,000.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_005",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$125,000.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:42:04Z",
+          "metadata": { "confidence": 0.95 }
+        }
+      ]
+    },
+    {
+      "field_id": "w2_box6_medicare_withheld",
+      "label": "Box 6: Medicare tax withheld",
+      "ai_ground_truth": {
+        "value": "$1,812.50",
+        "confidence": 0.9,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:42:05Z",
+        "reasoning": "OCR read \"1,812.50\" from Box 6, consistent with the standard 1.45% Medicare withholding rate on Box 5 wages.",
+        "doc_source": {
+          "doc_id": "w2_acme_2025",
+          "doc_name": "2025_W2_AcmeCorp.pdf",
+          "page": 4,
+          "bbox": { "x": 74.8, "y": 13.21, "width": 21.5, "height": 2.95 }
+        }
+      },
+      "current_state": { "value": "$1,812.50", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_006",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$1,812.50",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:42:05Z",
+          "metadata": { "confidence": 0.9 }
+        }
+      ]
+    },
+    {
+      "field_id": "line_7_state_withheld",
+      "label": "Line 7: State income tax withheld",
+      "ai_ground_truth": {
+        "value": "$1,200.00",
+        "confidence": 0.48,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:42:06Z",
+        "reasoning": "Box 17 print quality is degraded by a faint toner streak; OCR could not confidently resolve the third digit. Manual verification recommended.",
+        "doc_source": {
+          "doc_id": "w2_acme_2025",
+          "doc_name": "2025_W2_AcmeCorp.pdf",
+          "page": 4,
+          "bbox": { "x": 45.9, "y": 36.15, "width": 13.0, "height": 3.0 }
+        }
+      },
+      "current_state": { "value": "$1,200.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_007",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$1,200.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:42:06Z",
+          "metadata": { "confidence": 0.48 }
+        }
+      ]
+    },
+    {
+      "field_id": "misc_box1_rents",
+      "label": "Box 1: Rents",
+      "ai_ground_truth": {
+        "value": "$2,400.00",
+        "confidence": 0.88,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:45:10Z",
+        "reasoning": "OCR read \"2,400.00\" from Box 1 of the 1099-MISC with clean, high-contrast print.",
+        "doc_source": {
+          "doc_id": "misc_acme_2025",
+          "doc_name": "2025_1099-MISC_AcmeCorp.pdf",
+          "page": 1,
+          "bbox": { "x": 8, "y": 20, "width": 38, "height": 8 }
+        }
+      },
+      "current_state": { "value": "$2,400.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_008",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$2,400.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:45:10Z",
+          "metadata": { "confidence": 0.88 }
+        }
+      ]
+    },
+    {
+      "field_id": "misc_box3_other_income",
+      "label": "Box 3: Other income",
+      "ai_ground_truth": {
+        "value": "$500.00",
+        "confidence": 0.81,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:45:11Z",
+        "reasoning": "OCR read \"500.00\" from Box 3; minor ambiguity between \"5\" and \"S\" glyph reduced confidence slightly.",
+        "doc_source": {
+          "doc_id": "misc_acme_2025",
+          "doc_name": "2025_1099-MISC_AcmeCorp.pdf",
+          "page": 1,
+          "bbox": { "x": 8, "y": 32, "width": 38, "height": 8 }
+        }
+      },
+      "current_state": { "value": "$500.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_009",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$500.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:45:11Z",
+          "metadata": { "confidence": 0.81 }
+        }
+      ]
+    },
+    {
+      "field_id": "misc_box4_fed_withheld",
+      "label": "Box 4: Federal income tax withheld",
+      "ai_ground_truth": {
+        "value": "$0.00",
+        "confidence": 0.69,
+        "model": "Extraction-LLM v2.4",
+        "extracted_at": "2026-07-23T09:45:12Z",
+        "reasoning": "Box 4 appears blank; OCR inferred $0.00 but low print contrast in the surrounding gridlines limits certainty.",
+        "doc_source": {
+          "doc_id": "misc_acme_2025",
+          "doc_name": "2025_1099-MISC_AcmeCorp.pdf",
+          "page": 1,
+          "bbox": { "x": 52, "y": 20, "width": 40, "height": 8 }
+        }
+      },
+      "current_state": { "value": "$0.00", "status": "ai_extracted" },
+      "event_history": [
+        {
+          "event_id": "evt_010",
+          "parent_id": null,
+          "type": "AI_EXTRACTED",
+          "value": "$0.00",
+          "user_id": "system_ai_v2.4",
+          "timestamp": "2026-07-23T09:45:12Z",
+          "metadata": { "confidence": 0.69 }
+        }
+      ]
+    }
+  ]
+}
