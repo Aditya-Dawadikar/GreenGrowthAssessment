@@ -1,12 +1,14 @@
-import { CheckCircle2, ChevronRight, FileText, Users } from "lucide-react";
+import { CheckCircle2, ChevronRight, FileText, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { clients } from "@/mocks/clients";
 import { isClientReviewed, useTaxReturn } from "@/state/tax-return-store";
 
 export function DocumentSidebar() {
-  const { fields, activeClientId, activeDocId, setActiveClient, setActiveDoc } = useTaxReturn();
+  const { fields, activeClientId, activeDocId, starredClientIds, setActiveClient, setActiveDoc, toggleClientStarred } =
+    useTaxReturn();
 
   const reviewedCount = clients.filter((c) => isClientReviewed(c, fields)).length;
   const pendingCount = clients.length - reviewedCount;
@@ -35,28 +37,49 @@ export function DocumentSidebar() {
           {clients.map((client) => {
             const isActiveClient = client.client_id === activeClientId;
             const reviewed = isClientReviewed(client, fields);
+            const starred = starredClientIds.includes(client.client_id);
             return (
               <li key={client.client_id} className="mb-0.5">
-                <button
-                  type="button"
-                  onClick={() => setActiveClient(client.client_id)}
+                <div
                   className={cn(
-                    "flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                    "flex items-center gap-1 rounded-md pr-1.5 text-xs font-medium transition-colors",
                     isActiveClient ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50",
                   )}
                 >
-                  <ChevronRight
-                    className={cn("size-3 shrink-0 text-slate-400 transition-transform", isActiveClient && "rotate-90")}
-                  />
-                  <span className={cn("truncate", reviewed && "text-slate-400")}>{client.display_name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveClient(client.client_id)}
+                    className="flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1.5 text-left"
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "size-3 shrink-0 text-slate-400 transition-transform",
+                        isActiveClient && "rotate-90",
+                      )}
+                    />
+                    <span className={cn("truncate", reviewed && "text-slate-400")}>{client.display_name}</span>
+                  </button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="size-5 shrink-0"
+                    aria-label={starred ? "Unstar client" : "Star client for later review"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleClientStarred(client.client_id);
+                    }}
+                  >
+                    <Star className={cn("size-3", starred ? "fill-amber-400 text-amber-400" : "text-slate-300")} />
+                  </Button>
                   {reviewed ? (
-                    <CheckCircle2 className="ml-auto size-3.5 shrink-0 text-emerald-500" aria-label="Reviewed" />
+                    <CheckCircle2 className="size-3.5 shrink-0 text-emerald-500" aria-label="Reviewed" />
                   ) : (
-                    <Badge variant="outline" className="ml-auto h-4 shrink-0 px-1.5 text-[9px] font-normal text-slate-400">
+                    <Badge variant="outline" className="h-4 shrink-0 px-1.5 text-[9px] font-normal text-slate-400">
                       {client.documents.length}
                     </Badge>
                   )}
-                </button>
+                </div>
 
                 {isActiveClient && (
                   <ul className="ml-3.5 space-y-0.5 border-l border-slate-200 py-0.5 pl-2.5">

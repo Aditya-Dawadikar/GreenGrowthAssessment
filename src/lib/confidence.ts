@@ -1,8 +1,21 @@
 export type ConfidenceTier = "high" | "medium" | "low";
 
-export function confidenceTier(confidence: number): ConfidenceTier {
-  if (confidence >= 0.85) return "high";
-  if (confidence >= 0.65) return "medium";
+export interface ConfidenceThresholds {
+  high: number;
+  medium: number;
+}
+
+export const DEFAULT_CONFIDENCE_THRESHOLDS: ConfidenceThresholds = {
+  high: 0.85,
+  medium: 0.65,
+};
+
+export function confidenceTier(
+  confidence: number,
+  thresholds: ConfidenceThresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
+): ConfidenceTier {
+  if (confidence >= thresholds.high) return "high";
+  if (confidence >= thresholds.medium) return "medium";
   return "low";
 }
 

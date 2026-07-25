@@ -8,6 +8,7 @@ import {
 } from "react";
 import taxReturnData from "@/mocks/taxReturnData.json";
 import { clients } from "@/mocks/clients";
+import { DEFAULT_CONFIDENCE_THRESHOLDS, type ConfidenceThresholds } from "@/lib/confidence";
 import type { ClientMeta, FieldEvent, FieldStatus, TaxField, TaxReturnData } from "@/types/tax-return";
 
 export const CURRENT_USER = {
@@ -24,6 +25,8 @@ interface WorkspaceState {
   activeDocId: string | null;
   ledgerFieldId: string | null;
   checkedFieldIds: string[];
+  starredClientIds: string[];
+  confidenceThresholds: ConfidenceThresholds;
 }
 
 type Action =
@@ -37,8 +40,10 @@ type Action =
   | { type: "UNLOCK_FIELDS"; fieldIds: string[] }
   | { type: "TOGGLE_FIELD_CHECKED"; fieldId: string }
   | { type: "SET_ALL_CHECKED"; fieldIds: string[]; checked: boolean }
+  | { type: "TOGGLE_CLIENT_STARRED"; clientId: string }
   | { type: "OPEN_LEDGER"; fieldId: string }
-  | { type: "CLOSE_LEDGER" };
+  | { type: "CLOSE_LEDGER" }
+  | { type: "SET_CONFIDENCE_THRESHOLDS"; thresholds: ConfidenceThresholds };
 
 function nextEventId(): string {
   return `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -246,10 +251,21 @@ function reducer(state: WorkspaceState, action: Action): WorkspaceState {
         checkedFieldIds: state.checkedFieldIds.filter((id) => !idSet.has(id)),
       };
     }
+    case "TOGGLE_CLIENT_STARRED": {
+      const isStarred = state.starredClientIds.includes(action.clientId);
+      return {
+        ...state,
+        starredClientIds: isStarred
+          ? state.starredClientIds.filter((id) => id !== action.clientId)
+          : [...state.starredClientIds, action.clientId],
+      };
+    }
     case "OPEN_LEDGER":
       return { ...state, ledgerFieldId: action.fieldId };
     case "CLOSE_LEDGER":
       return { ...state, ledgerFieldId: null };
+    case "SET_CONFIDENCE_THRESHOLDS":
+      return { ...state, confidenceThresholds: action.thresholds };
     default:
       return state;
   }
@@ -266,6 +282,8 @@ function initState(): WorkspaceState {
     activeDocId: firstDocId,
     ledgerFieldId: null,
     checkedFieldIds: [],
+    starredClientIds: [],
+    confidenceThresholds: DEFAULT_CONFIDENCE_THRESHOLDS,
   };
 }
 
@@ -281,8 +299,10 @@ interface TaxReturnContextValue extends WorkspaceState {
   unlockFields: (fieldIds: string[]) => void;
   toggleFieldChecked: (fieldId: string) => void;
   setAllChecked: (fieldIds: string[], checked: boolean) => void;
+  toggleClientStarred: (clientId: string) => void;
   openLedger: (fieldId: string) => void;
   closeLedger: () => void;
+  setConfidenceThresholds: (thresholds: ConfidenceThresholds) => void;
 }
 
 const TaxReturnContext = createContext<TaxReturnContextValue | null>(null);
@@ -309,8 +329,16 @@ export function TaxReturnProvider({ children }: { children: ReactNode }) {
     (fieldIds: string[], checked: boolean) => dispatch({ type: "SET_ALL_CHECKED", fieldIds, checked }),
     [],
   );
+  const toggleClientStarred = useCallback(
+    (clientId: string) => dispatch({ type: "TOGGLE_CLIENT_STARRED", clientId }),
+    [],
+  );
   const openLedger = useCallback((fieldId: string) => dispatch({ type: "OPEN_LEDGER", fieldId }), []);
   const closeLedger = useCallback(() => dispatch({ type: "CLOSE_LEDGER" }), []);
+  const setConfidenceThresholds = useCallback(
+    (thresholds: ConfidenceThresholds) => dispatch({ type: "SET_CONFIDENCE_THRESHOLDS", thresholds }),
+    [],
+  );
 
   const value = useMemo<TaxReturnContextValue>(
     () => ({
@@ -331,8 +359,10 @@ export function TaxReturnProvider({ children }: { children: ReactNode }) {
       unlockFields,
       toggleFieldChecked,
       setAllChecked,
+      toggleClientStarred,
       openLedger,
       closeLedger,
+      setConfidenceThresholds,
     }),
     [
       state,
@@ -346,8 +376,10 @@ export function TaxReturnProvider({ children }: { children: ReactNode }) {
       unlockFields,
       toggleFieldChecked,
       setAllChecked,
+      toggleClientStarred,
       openLedger,
       closeLedger,
+      setConfidenceThresholds,
     ],
   );
 

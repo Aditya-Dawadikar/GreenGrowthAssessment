@@ -1,10 +1,13 @@
-import { useState } from "react";
-import { Check, ChevronLeft, ChevronRight, ClipboardList, Loader2, Lock, Unlock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, ClipboardList, Loader2, Lock, Search, Star, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FieldRow } from "@/components/verification/FieldRow";
+import { ThresholdPopover } from "@/components/verification/ThresholdPopover";
 import { clients } from "@/mocks/clients";
+import { cn } from "@/lib/utils";
 import { mutationCount, useTaxReturn } from "@/state/tax-return-store";
 
 export function VerificationPane() {
@@ -13,15 +16,30 @@ export function VerificationPane() {
     activeClientId,
     activeDocId,
     checkedFieldIds,
+    starredClientIds,
     setActiveClient,
     setAllChecked,
     lockFields,
     unlockFields,
+    toggleClientStarred,
   } = useTaxReturn();
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 250);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
+  }, [activeDocId]);
 
   const clientIndex = clients.findIndex((c) => c.client_id === activeClientId);
   const activeClient = clientIndex >= 0 ? clients[clientIndex] : null;
+  const isActiveClientStarred = Boolean(activeClientId && starredClientIds.includes(activeClientId));
 
   function stepClient(delta: 1 | -1) {
     if (clientIndex === -1) {
@@ -49,6 +67,16 @@ export function VerificationPane() {
 
   const docFields = clientFields.filter((f) => f.ai_ground_truth.doc_source.doc_id === activeDocId);
   const docFieldIds = docFields.map((f) => f.field_id);
+
+  const trimmedQuery = debouncedSearchQuery.trim().toLowerCase();
+  const visibleFields = trimmedQuery
+    ? docFields.filter(
+        (f) =>
+          f.label.toLowerCase().includes(trimmedQuery) ||
+          f.ai_ground_truth.value.toLowerCase().includes(trimmedQuery) ||
+          f.current_state.value.toLowerCase().includes(trimmedQuery),
+      )
+    : docFields;
   const checkedInDoc = checkedFieldIds.filter((id) => docFieldIds.includes(id));
   const allChecked = docFieldIds.length > 0 && checkedInDoc.length === docFieldIds.length;
   const checkedFields = docFields.filter((f) => checkedInDoc.includes(f.field_id));
@@ -69,10 +97,28 @@ export function VerificationPane() {
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-white">
-      <div className="flex shrink-0 items-center gap-1.5 border-b border-slate-200 px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-2 py-1.5">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          className="shrink-0"
+          disabled={!activeClientId}
+          aria-label={isActiveClientStarred ? "Unstar client" : "Star client for later review"}
+          onClick={() => activeClientId && toggleClientStarred(activeClientId)}
+        >
+          <Star className={cn("size-3.5", isActiveClientStarred ? "fill-amber-400 text-amber-400" : "text-slate-300")} />
+        </Button>
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-900">
           {activeClient?.display_name ?? "No client selected"}
         </span>
+        <div className="flex shrink-0 items-center gap-1.5 text-[10px] text-slate-500">
+          <span>Progress:</span>
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
+          </div>
+          <span className="font-mono tabular-nums text-slate-700">{progress}%</span>
+        </div>
         <div className="flex shrink-0 items-center gap-0.5">
           <Button
             type="button"
@@ -105,75 +151,72 @@ export function VerificationPane() {
         </div>
       ) : (
         <>
-          <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-3 py-1.5 text-xs text-slate-500">
-            <span className="font-mono tabular-nums">
-              {totalMutations} mutation{totalMutations === 1 ? "" : "s"}
-            </span>
-
-            <div className="flex items-center gap-2">
-              <span>Progress:</span>
-              <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />
-              </div>
-              <span className="font-mono tabular-nums text-slate-700">{progress}%</span>
+          <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-3 py-1.5">
+            <div className="relative max-w-xs flex-1">
+              <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search fields…"
+                className="h-7 pl-7 text-xs"
+                aria-label="Search fields"
+              />
             </div>
 
-            <Button
-              size="sm"
-              className="ml-auto h-7 px-3 text-xs"
-              onClick={handleSave}
-              disabled={saveState !== "idle"}
-            >
-              {saveIcon}
-              {saveLabel}
-            </Button>
+            <div className="ml-auto flex items-center gap-1.5">
+              <ThresholdPopover />
+              <Button size="sm" className="h-7 px-3 text-xs" onClick={handleSave} disabled={saveState !== "idle"}>
+                {saveIcon}
+                {saveLabel}
+              </Button>
+            </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-3 py-1.5">
+          {checkedInDoc.length > 0 && (
+            <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-3 py-1.5">
+              <span className="text-xs font-medium text-slate-600">{checkedInDoc.length} selected</span>
+              <div className="ml-auto flex items-center gap-1.5">
+                {lockableChecked.length > 0 && (
+                  <Button type="button" variant="outline" size="xs" onClick={() => lockFields(lockableChecked)}>
+                    <Lock className="size-3" />
+                    Lock selected
+                  </Button>
+                )}
+                {unlockableChecked.length > 0 && (
+                  <Button type="button" variant="outline" size="xs" onClick={() => unlockFields(unlockableChecked)}>
+                    <Unlock className="size-3" />
+                    Unlock selected
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="grid shrink-0 grid-cols-[1rem_1fr_1fr_6rem_auto] gap-2 border-b border-slate-200 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
             <Checkbox
               checked={allChecked}
               disabled={docFieldIds.length === 0}
               onCheckedChange={(checked) => setAllChecked(docFieldIds, checked === true)}
               aria-label="Select all fields for bulk lock/unlock"
             />
-            {checkedInDoc.length > 0 ? (
-              <>
-                <span className="text-xs font-medium text-slate-600">{checkedInDoc.length} selected</span>
-                <div className="ml-auto flex items-center gap-1.5">
-                  {lockableChecked.length > 0 && (
-                    <Button type="button" variant="outline" size="xs" onClick={() => lockFields(lockableChecked)}>
-                      <Lock className="size-3" />
-                      Lock selected
-                    </Button>
-                  )}
-                  {unlockableChecked.length > 0 && (
-                    <Button type="button" variant="outline" size="xs" onClick={() => unlockFields(unlockableChecked)}>
-                      <Unlock className="size-3" />
-                      Unlock selected
-                    </Button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Select all</span>
-            )}
-          </div>
-
-          <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] gap-2 border-b border-slate-200 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-            <span>Ground Truth (AI, read-only)</span>
+            <span className="text-center">AI Extracted</span>
+            <span className="text-center">Working State</span>
+            <span className="text-center">Status</span>
             <span className="text-center">Mutations</span>
-            <span>Working State (editable)</span>
           </div>
 
           <ScrollArea className="min-h-0 flex-1">
-            {docFields.length === 0 ? (
-              <p className="p-4 text-sm text-slate-400">No extracted fields for this document.</p>
+            {visibleFields.length === 0 ? (
+              <p className="p-4 text-sm text-slate-400">
+                {docFields.length === 0 ? "No extracted fields for this document." : "No fields match your search."}
+              </p>
             ) : (
-              docFields.map((field) => <FieldRow key={field.field_id} field={field} />)
+              visibleFields.map((field) => <FieldRow key={field.field_id} field={field} />)
             )}
           </ScrollArea>
 
-          <div className="flex shrink-0 items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
+          {/* <div className="flex shrink-0 items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
             <Button type="button" variant="outline" size="sm" onClick={() => stepClient(-1)}>
               <ChevronLeft className="size-3.5" />
               Previous
@@ -186,7 +229,7 @@ export function VerificationPane() {
               Next
               <ChevronRight className="size-3.5" />
             </Button>
-          </div>
+          </div> */}
         </>
       )}
     </div>
