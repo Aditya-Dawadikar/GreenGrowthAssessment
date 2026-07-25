@@ -46,6 +46,7 @@ export interface CurrentState {
 
 export interface TaxField {
   field_id: string;
+  client_id: string;
   label: string;
   ai_ground_truth: AiGroundTruth;
   current_state: CurrentState;
@@ -70,4 +71,10 @@ export interface DocumentMeta {
   /** For kind "pdf": the URL react-pdf should load. */
   src?: string;
   pageCount?: number;
+}
+
+export interface ClientMeta {
+  client_id: string;
+  display_name: string;
+  documents: DocumentMeta[];
 }

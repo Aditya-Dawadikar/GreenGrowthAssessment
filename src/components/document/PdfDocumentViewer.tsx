@@ -30,7 +30,13 @@ export function PdfDocumentViewer({ src, pageNumber, bbox }: PdfDocumentViewerPr
   }, []);
 
   useEffect(() => {
-    pageWrapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const container = containerRef.current;
+    const target = pageWrapRef.current;
+    if (!container || !target) return;
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const delta = targetRect.top - containerRect.top - (container.clientHeight - target.clientHeight) / 2;
+    container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
   }, [pageNumber, bbox]);
 
   return (

@@ -1,6 +1,7 @@
 import { Lock, Unlock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { CONFIDENCE_TIER_CLASSES, CONFIDENCE_TIER_DOT, confidenceTier } from "@/lib/confidence";
 import { ReasoningPopover } from "@/components/verification/ReasoningPopover";
@@ -15,9 +16,11 @@ const STATUS_BADGE: Record<TaxField["current_state"]["status"], { label: string;
 };
 
 export function FieldRow({ field }: { field: TaxField }) {
-  const { selectedFieldId, selectField, updateValue, lockField, unlockField, openLedger } = useTaxReturn();
+  const { selectedFieldId, checkedFieldIds, selectField, updateValue, lockField, unlockField, toggleFieldChecked, openLedger } =
+    useTaxReturn();
 
   const isSelected = selectedFieldId === field.field_id;
+  const isChecked = checkedFieldIds.includes(field.field_id);
   const tier = confidenceTier(field.ai_ground_truth.confidence);
   const status = field.current_state.status;
   const isLocked = status === "locked";
@@ -31,15 +34,23 @@ export function FieldRow({ field }: { field: TaxField }) {
         isSelected ? "bg-indigo-50/60" : "hover:bg-slate-50",
       )}
     >
-      <div
-        onClick={() => selectField(field.field_id)}
-        className="mb-1.5 flex cursor-pointer items-center gap-1.5"
-      >
-        <span className="text-[11px] font-medium text-slate-600">{field.label}</span>
-        <ReasoningPopover groundTruth={field.ai_ground_truth} />
-        <Badge variant="outline" className={cn("ml-auto h-4 px-1.5 text-[9px] font-medium", badge.className)}>
-          {badge.label}
-        </Badge>
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <Checkbox
+          checked={isChecked}
+          onClick={(e) => e.stopPropagation()}
+          onCheckedChange={() => toggleFieldChecked(field.field_id)}
+          aria-label={`Select ${field.label} for bulk lock/unlock`}
+        />
+        <div
+          onClick={() => selectField(field.field_id)}
+          className="flex flex-1 cursor-pointer items-center gap-1.5"
+        >
+          <span className="text-[11px] font-medium text-slate-600">{field.label}</span>
+          <ReasoningPopover groundTruth={field.ai_ground_truth} />
+          <Badge variant="outline" className={cn("ml-auto h-4 px-1.5 text-[9px] font-medium", badge.className)}>
+            {badge.label}
+          </Badge>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
