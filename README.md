@@ -7,6 +7,8 @@ greenfield case-study prototype with zero backend dependency: all
 extraction, confidence scoring, mutation history, and tax math is driven by
 a client-side event-sourcing model over a hardcoded dataset.
 
+![img](./screenshot/dashboard.png)
+
 ## Quick Start
 
 ```bash
@@ -143,10 +145,16 @@ own mechanism, all converging on the same jump-to-source interaction:
    (doc id, page, bounding box) on every field. Selecting a field scrolls
    the document viewer to that page and draws the highlight box. This is
    the "raw extraction → source document" edge.
+
+   ![img](./screenshot/userlist.png)
+   ![img](./screenshot/sampledoc.png)
+   ![img](./screenshot/verificationpane.png)
 2. **How did this value change over time?** — the append-only,
    `parent_id`-chained `event_history` (`AI_EXTRACTED → UPDATED → LOCKED →
    UNLOCKED`), surfaced in the mutation drawer. This is the "value → its own
    history" edge — who touched it, when, and what it was before.
+   
+   ![img](./screenshot/datalineage.png)
 3. **How was this *derived* number computed?** — every `CalculatedField` in
    `tax-calculations.ts` carries a `lineage` array (the raw fields or other
    calculated totals summed/multiplied into it), a symbolic `formula`
@@ -156,6 +164,8 @@ own mechanism, all converging on the same jump-to-source interaction:
    points at Total Income, whose own lineage points at raw fields — so a
    refund figure can be traced two levels deep back to a specific box on a
    specific PDF page.
+
+   ![img](./screenshot/tax_calculation.png)
 
 Rather than inventing a separate UI idiom for each of these, clicking any
 lineage entry — a field row, a ledger event's field, or a "Derived from"
