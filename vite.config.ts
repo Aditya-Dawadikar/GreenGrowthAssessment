@@ -14,4 +14,12 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  preview: {
+    // Railway (and similar PaaS) route through a dynamic *.up.railway.app
+    // host that isn't known at build time, so the default host-header
+    // allowlist would reject every request — widen it for the prod preview
+    // server only. Dev server (`server` above) keeps the strict default.
+    host: true,
+    allowedHosts: true,
+  },
 })

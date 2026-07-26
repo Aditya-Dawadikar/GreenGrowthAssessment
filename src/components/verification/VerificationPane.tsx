@@ -10,7 +10,7 @@ import { TaxCalculationView } from "@/components/verification/TaxCalculationView
 import { ThresholdPopover } from "@/components/verification/ThresholdPopover";
 import { clients } from "@/mocks/clients";
 import { cn } from "@/lib/utils";
-import { mutationCount, useTaxReturn } from "@/state/tax-return-store";
+import { useTaxReturn } from "@/state/tax-return-store";
 
 type RightPaneTab = "verification" | "calculation";
 
@@ -90,7 +90,6 @@ export function VerificationPane() {
 
   const lockedCount = clientFields.filter((f) => f.current_state.status === "locked").length;
   const progress = clientFields.length === 0 ? 0 : Math.round((lockedCount / clientFields.length) * 100);
-  const totalMutations = clientFields.reduce((sum, f) => sum + mutationCount(f), 0);
 
   const saveIcon =
     saveState === "saving" ? (
