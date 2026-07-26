@@ -9,6 +9,7 @@ import {
 import taxReturnData from "@/mocks/taxReturnData.json";
 import { clients } from "@/mocks/clients";
 import { DEFAULT_CONFIDENCE_THRESHOLDS, type ConfidenceThresholds } from "@/lib/confidence";
+import { TAX_SCHEME, type CalculatedField, type TaxCalculationSubmission } from "@/lib/tax-calculations";
 import type { ClientMeta, FieldEvent, FieldStatus, TaxField, TaxReturnData } from "@/types/tax-return";
 
 export const CURRENT_USER = {
@@ -27,6 +28,8 @@ interface WorkspaceState {
   checkedFieldIds: string[];
   starredClientIds: string[];
   confidenceThresholds: ConfidenceThresholds;
+  /** Latest submitted tax calculation per client, keyed by client_id. */
+  taxSubmissions: Record<string, TaxCalculationSubmission>;
 }
 
 type Action =
@@ -43,10 +46,15 @@ type Action =
   | { type: "TOGGLE_CLIENT_STARRED"; clientId: string }
   | { type: "OPEN_LEDGER"; fieldId: string }
   | { type: "CLOSE_LEDGER" }
-  | { type: "SET_CONFIDENCE_THRESHOLDS"; thresholds: ConfidenceThresholds };
+  | { type: "SET_CONFIDENCE_THRESHOLDS"; thresholds: ConfidenceThresholds }
+  | { type: "SUBMIT_TAX_CALCULATION"; clientId: string; totals: CalculatedField[] };
+
+function nextId(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+}
 
 function nextEventId(): string {
-  return `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  return nextId("evt");
 }
 
 function latestEvent(field: TaxField): FieldEvent {
@@ -266,6 +274,28 @@ function reducer(state: WorkspaceState, action: Action): WorkspaceState {
       return { ...state, ledgerFieldId: null };
     case "SET_CONFIDENCE_THRESHOLDS":
       return { ...state, confidenceThresholds: action.thresholds };
+    case "SUBMIT_TAX_CALCULATION": {
+      const submission: TaxCalculationSubmission = {
+        submission_id: nextId("sub"),
+        client_id: action.clientId,
+        scheme_id: TAX_SCHEME.id,
+        scheme_name: TAX_SCHEME.name,
+        submitted_at: new Date().toISOString(),
+        user_id: CURRENT_USER.id,
+        user_display_name: CURRENT_USER.displayName,
+        totals: action.totals.map((t) => ({
+          calc_id: t.calc_id,
+          label: t.label,
+          formattedValue: t.formattedValue,
+          formula: t.formula,
+          expression: t.expression,
+        })),
+      };
+      return {
+        ...state,
+        taxSubmissions: { ...state.taxSubmissions, [action.clientId]: submission },
+      };
+    }
     default:
       return state;
   }
@@ -284,6 +314,7 @@ function initState(): WorkspaceState {
     checkedFieldIds: [],
     starredClientIds: [],
     confidenceThresholds: DEFAULT_CONFIDENCE_THRESHOLDS,
+    taxSubmissions: {},
   };
 }
 
@@ -303,6 +334,7 @@ interface TaxReturnContextValue extends WorkspaceState {
   openLedger: (fieldId: string) => void;
   closeLedger: () => void;
   setConfidenceThresholds: (thresholds: ConfidenceThresholds) => void;
+  submitTaxCalculation: (clientId: string, totals: CalculatedField[]) => void;
 }
 
 const TaxReturnContext = createContext<TaxReturnContextValue | null>(null);
@@ -339,6 +371,10 @@ export function TaxReturnProvider({ children }: { children: ReactNode }) {
     (thresholds: ConfidenceThresholds) => dispatch({ type: "SET_CONFIDENCE_THRESHOLDS", thresholds }),
     [],
   );
+  const submitTaxCalculation = useCallback(
+    (clientId: string, totals: CalculatedField[]) => dispatch({ type: "SUBMIT_TAX_CALCULATION", clientId, totals }),
+    [],
+  );
 
   const value = useMemo<TaxReturnContextValue>(
     () => ({
@@ -363,6 +399,7 @@ export function TaxReturnProvider({ children }: { children: ReactNode }) {
       openLedger,
       closeLedger,
       setConfidenceThresholds,
+      submitTaxCalculation,
     }),
     [
       state,
@@ -380,6 +417,7 @@ export function TaxReturnProvider({ children }: { children: ReactNode }) {
       openLedger,
       closeLedger,
       setConfidenceThresholds,
+      submitTaxCalculation,
     ],
   );
 

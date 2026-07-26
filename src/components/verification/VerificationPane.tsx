@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldRow } from "@/components/verification/FieldRow";
+import { TaxCalculationView } from "@/components/verification/TaxCalculationView";
 import { ThresholdPopover } from "@/components/verification/ThresholdPopover";
 import { clients } from "@/mocks/clients";
 import { cn } from "@/lib/utils";
 import { mutationCount, useTaxReturn } from "@/state/tax-return-store";
+
+type RightPaneTab = "verification" | "calculation";
 
 export function VerificationPane() {
   const {
@@ -26,6 +30,7 @@ export function VerificationPane() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<RightPaneTab>("verification");
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 250);
@@ -144,93 +149,113 @@ export function VerificationPane() {
         </div>
       </div>
 
-      {!activeDocId ? (
+      {!activeClientId ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-slate-400">
           <ClipboardList className="size-8" />
-          <p className="text-sm">Select a document to verify its extracted fields.</p>
+          <p className="text-sm">Select a client to begin verification.</p>
         </div>
       ) : (
-        <>
-          <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-3 py-1.5">
-            <div className="relative max-w-xs flex-1">
-              <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search fields…"
-                className="h-7 pl-7 text-xs"
-                aria-label="Search fields"
-              />
-            </div>
-
-            <div className="ml-auto flex items-center gap-1.5">
-              <ThresholdPopover />
-              <Button size="sm" className="h-7 px-3 text-xs" onClick={handleSave} disabled={saveState !== "idle"}>
-                {saveIcon}
-                {saveLabel}
-              </Button>
-            </div>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as RightPaneTab)}
+          className="flex min-h-0 flex-1 flex-col gap-0"
+        >
+          <div className="shrink-0 border-b border-slate-200 px-3 py-1.5">
+            <TabsList variant="line">
+              <TabsTrigger value="verification">Extraction &amp; Verification</TabsTrigger>
+              <TabsTrigger value="calculation">Tax Calculation</TabsTrigger>
+            </TabsList>
           </div>
 
-          {checkedInDoc.length > 0 && (
-            <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-3 py-1.5">
-              <span className="text-xs font-medium text-slate-600">{checkedInDoc.length} selected</span>
-              <div className="ml-auto flex items-center gap-1.5">
-                {lockableChecked.length > 0 && (
-                  <Button type="button" variant="outline" size="xs" onClick={() => lockFields(lockableChecked)}>
-                    <Lock className="size-3" />
-                    Lock selected
-                  </Button>
-                )}
-                {unlockableChecked.length > 0 && (
-                  <Button type="button" variant="outline" size="xs" onClick={() => unlockFields(unlockableChecked)}>
-                    <Unlock className="size-3" />
-                    Unlock selected
-                  </Button>
-                )}
+          <TabsContent value="verification" className="flex min-h-0 flex-1 flex-col">
+            {!activeDocId ? (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 text-slate-400">
+                <ClipboardList className="size-8" />
+                <p className="text-sm">Select a document to verify its extracted fields.</p>
               </div>
-            </div>
-          )}
-
-          <div className="grid shrink-0 grid-cols-[1rem_1fr_1fr_6rem_auto] gap-2 border-b border-slate-200 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-            <Checkbox
-              checked={allChecked}
-              disabled={docFieldIds.length === 0}
-              onCheckedChange={(checked) => setAllChecked(docFieldIds, checked === true)}
-              aria-label="Select all fields for bulk lock/unlock"
-            />
-            <span className="text-center">AI Extracted</span>
-            <span className="text-center">Working State</span>
-            <span className="text-center">Status</span>
-            <span className="text-center">Mutations</span>
-          </div>
-
-          <ScrollArea className="min-h-0 flex-1">
-            {visibleFields.length === 0 ? (
-              <p className="p-4 text-sm text-slate-400">
-                {docFields.length === 0 ? "No extracted fields for this document." : "No fields match your search."}
-              </p>
             ) : (
-              visibleFields.map((field) => <FieldRow key={field.field_id} field={field} />)
-            )}
-          </ScrollArea>
+              <>
+                <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-3 py-1.5">
+                  <div className="relative max-w-xs flex-1">
+                    <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search fields…"
+                      className="h-7 pl-7 text-xs"
+                      aria-label="Search fields"
+                    />
+                  </div>
 
-          {/* <div className="flex shrink-0 items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => stepClient(-1)}>
-              <ChevronLeft className="size-3.5" />
-              Previous
-            </Button>
-            <Button size="sm" onClick={handleSave} disabled={saveState !== "idle"}>
-              {saveIcon}
-              {saveLabel}
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => stepClient(1)}>
-              Next
-              <ChevronRight className="size-3.5" />
-            </Button>
-          </div> */}
-        </>
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <ThresholdPopover />
+                    <Button size="sm" className="h-7 px-3 text-xs" onClick={handleSave} disabled={saveState !== "idle"}>
+                      {saveIcon}
+                      {saveLabel}
+                    </Button>
+                  </div>
+                </div>
+
+                {checkedInDoc.length > 0 && (
+                  <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 px-3 py-1.5">
+                    <span className="text-xs font-medium text-slate-600">{checkedInDoc.length} selected</span>
+                    <div className="ml-auto flex items-center gap-1.5">
+                      {lockableChecked.length > 0 && (
+                        <Button type="button" variant="outline" size="xs" onClick={() => lockFields(lockableChecked)}>
+                          <Lock className="size-3" />
+                          Lock selected
+                        </Button>
+                      )}
+                      {unlockableChecked.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="xs"
+                          onClick={() => unlockFields(unlockableChecked)}
+                        >
+                          <Unlock className="size-3" />
+                          Unlock selected
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid shrink-0 grid-cols-[1rem_1fr_1fr_6rem_auto] gap-2 border-b border-slate-200 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                  <Checkbox
+                    checked={allChecked}
+                    disabled={docFieldIds.length === 0}
+                    onCheckedChange={(checked) => setAllChecked(docFieldIds, checked === true)}
+                    aria-label="Select all fields for bulk lock/unlock"
+                  />
+                  <span className="text-center">AI Extracted</span>
+                  <span className="text-center">Working State</span>
+                  <span className="text-center">Status</span>
+                  <span className="text-center">Mutations</span>
+                </div>
+
+                <ScrollArea className="min-h-0 flex-1">
+                  {visibleFields.length === 0 ? (
+                    <p className="p-4 text-sm text-slate-400">
+                      {docFields.length === 0 ? "No extracted fields for this document." : "No fields match your search."}
+                    </p>
+                  ) : (
+                    visibleFields.map((field) => <FieldRow key={field.field_id} field={field} />)
+                  )}
+                </ScrollArea>
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="calculation" className="flex min-h-0 flex-1 flex-col">
+            <TaxCalculationView
+              fields={clientFields}
+              clientId={activeClientId}
+              onFieldSelected={() => setActiveTab("verification")}
+            />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );

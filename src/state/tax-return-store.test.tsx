@@ -1,6 +1,7 @@
 import { act, renderHook, type RenderHookResult } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { TaxReturnProvider, isClientReviewed, mutationCount, useTaxReturn } from "@/state/tax-return-store";
+import { TAX_SCHEME, type CalculatedField } from "@/lib/tax-calculations";
+import { CURRENT_USER, TaxReturnProvider, isClientReviewed, mutationCount, useTaxReturn } from "@/state/tax-return-store";
 import type { ClientMeta, FieldEvent, FieldStatus, TaxField } from "@/types/tax-return";
 
 // John Doe is the default active client on init, and this is one of his W-2
@@ -379,5 +380,68 @@ describe("isClientReviewed", () => {
       makeField({ field_id: "f2", client_id: "client_b", status: "ai_extracted" }),
     ];
     expect(isClientReviewed(client, fields)).toBe(true);
+  });
+});
+
+describe("submitTaxCalculation", () => {
+  const JOHN_DOE = "client_john_doe";
+  const totals: CalculatedField[] = [
+    {
+      calc_id: "calc_total_income",
+      label: "Total Income",
+      value: 127900,
+      formattedValue: "$127,900.00",
+      formula: "Wages + Rents + Other income",
+      expression: "$125,000.00 + $2,400.00 + $500.00 = $127,900.00",
+      lineage: [],
+    },
+  ];
+
+  it("records nothing for a client until a calculation is submitted", () => {
+    const { result } = setup();
+    expect(result.current.taxSubmissions[JOHN_DOE]).toBeUndefined();
+  });
+
+  it("stores a submission carrying the scheme identifier, totals, and current user", () => {
+    const { result } = setup();
+    act(() => result.current.submitTaxCalculation(JOHN_DOE, totals));
+
+    const submission = result.current.taxSubmissions[JOHN_DOE];
+    expect(submission).toBeDefined();
+    expect(submission.client_id).toBe(JOHN_DOE);
+    expect(submission.scheme_id).toBe(TAX_SCHEME.id);
+    expect(submission.scheme_name).toBe(TAX_SCHEME.name);
+    expect(submission.user_id).toBe(CURRENT_USER.id);
+    expect(submission.user_display_name).toBe(CURRENT_USER.displayName);
+    expect(submission.totals).toEqual([
+      {
+        calc_id: "calc_total_income",
+        label: "Total Income",
+        formattedValue: "$127,900.00",
+        formula: "Wages + Rents + Other income",
+        expression: "$125,000.00 + $2,400.00 + $500.00 = $127,900.00",
+      },
+    ]);
+  });
+
+  it("overwrites the previous submission for the same client rather than accumulating", () => {
+    const { result } = setup();
+    act(() => result.current.submitTaxCalculation(JOHN_DOE, totals));
+    const firstId = result.current.taxSubmissions[JOHN_DOE].submission_id;
+
+    act(() =>
+      result.current.submitTaxCalculation(JOHN_DOE, [{ ...totals[0], formattedValue: "$200,000.00", value: 200000 }]),
+    );
+
+    expect(result.current.taxSubmissions[JOHN_DOE].submission_id).not.toBe(firstId);
+    expect(result.current.taxSubmissions[JOHN_DOE].totals[0].formattedValue).toBe("$200,000.00");
+  });
+
+  it("keeps submissions for different clients independent", () => {
+    const { result } = setup();
+    act(() => result.current.submitTaxCalculation(JOHN_DOE, totals));
+
+    expect(result.current.taxSubmissions["client_acme_rentals"]).toBeUndefined();
+    expect(result.current.taxSubmissions[JOHN_DOE]).toBeDefined();
   });
 });
